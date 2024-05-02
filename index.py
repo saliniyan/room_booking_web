@@ -10,7 +10,7 @@ application.config['DATABASE'] = 'site.db'
 application.secret_key = "hello"
 
 EMAIL_ADDRESS = "vishnus.22aim@kongu.edu" 
-EMAIL_PASSWORD = "vishnu17"  #neet to give password here 
+EMAIL_PASSWORD = "#"  #need to give password here 
 RECIPIENT_EMAIL = "pranavsivakumar328@gmail.com"
 
 def get_db():
