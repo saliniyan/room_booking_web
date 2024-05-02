@@ -163,14 +163,8 @@
                     <th>Name</th>
                     <th>Designation</th>
                     <th>Phone Number</th>
-                    <th>Purpose of Visit</th>
-                    <th>Originator Name</th>
-                    <th>Department Contact Number</th>
-                    <th>No. of Breakfast</th>
-                    <th>No. of Lunch</th>
-                    <th>No. of Dinner</th>
+                    <th>Details</th>
                     <th>Action</th>
-                    <th>Response</th>
                 </tr>
             </thead>
             <tbody>
@@ -183,26 +177,25 @@
                     <td>{{ booking['name'] }}</td>
                     <td>{{ booking['designation'] }}</td>
                     <td>{{ booking['phone_no'] }}</td>
-                    <td>{{ booking['purpose_of_visit'] }}</td>
-                    <td>{{ booking['originator_name'] }}</td>
-                    <td>{{ booking['department_contact_no'] }}</td>
-                    <td>{{ booking['no_of_breakfast'] }}</td>
-                    <td>{{ booking['no_of_lunch'] }}</td>
-                    <td>{{ booking['no_of_dinner'] }}</td>
+                    <td>
+                    Purpose_of_visit: {{ booking['purpose_of_visit'] }}<br>
+                    Originator_name: {{ booking['originator_name'] }}<br>
+                    Department Contact Number: {{ booking['department_contact_no'] }}<br>
+                    No_of_breakfast: {{ booking['no_of_breakfast'] }}<br>
+                    No_of_lunch: {{ booking['no_of_lunch'] }}<br>
+                    No_of_dinner: {{ booking['no_of_dinner'] }}</td>
                     <td>
                         <form class="action-form" method="post" action="{{ url_for('admin_panel') }}">
                             <input type="hidden" name="booking_id" value="{{ booking['id'] }}">
-                            <select id="action" name="action" onchange="showReason()">
+                            <select class="action" name="action" onchange="showReason(this)">
                                 <option value="accept">Accept</option>
                                 <option value="reject">Reject</option>
                             </select>
                             
-                            <div id="reasonDiv" style="display: none;">
+                            <div class="reasonDiv" style="display: none;">
                                 <label for="reason">Reason for rejection:</label><br>
-                                <textarea id="reason" name="reason" rows="4" cols="50"></textarea><br>
+                                <textarea name="reason" rows="4" cols="50"></textarea><br>
                             </div>
-                        </td>
-                        <td>
                             <button type="submit">Submit</button>
                         </form>
                     </td>
@@ -212,14 +205,14 @@
         </table>
     </div>
     <div class="container_button">
-    <br>
-    <button id="downloadButton" class="button" style= "margin-right: 20px;">Download Accepted Bookings</button>
+        <br>
+        <button id="downloadButton" class="button" style= "margin-right: 20px;">Download Accepted Bookings</button>
     </div>
 <script>
-function showReason() {
-    var actionSelect = document.getElementById("action");
-    var reasonDiv = document.getElementById("reasonDiv");
-    if (actionSelect.value === "reject") {
+function showReason(selectElement) {
+    var parentRow = selectElement.closest("tr"); // Get the parent row of the select element
+    var reasonDiv = parentRow.querySelector(".reasonDiv"); // Find the reasonDiv within the row
+    if (selectElement.value === "reject") {
         reasonDiv.style.display = "block";
     } else {
         reasonDiv.style.display = "none";
