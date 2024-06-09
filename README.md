@@ -8,6 +8,18 @@ This project is a web-based room booking system built using Python, HTML, and CS
 - **Room Availability Check**: Users can check the availability of rooms before booking.
 - **Admin Panel**: Admins can view, add, and delete room bookings.
 
+  
+## Screenshots
+
+### Home Page
+![Login page](images/login.png)
+
+### Booking Page
+![Index page](images/index.png)
+
+### Admin Panel
+![Admin Panel](images/admin_panel.png)
+
 ## Hosted Application
 
 You can access the hosted application at [Room Booking System](https://saliniyan.pythonanywhere.com/).
