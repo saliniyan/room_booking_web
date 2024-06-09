@@ -7,14 +7,15 @@ This project is a web-based room booking system built using Python, HTML, and CS
 - **User Authentication**: Secure login and registration for users.
 - **Room Availability Check**: Users can check the availability of rooms before booking.
 - **Admin Panel**: Admins can view, add, and delete room bookings.
+- #### **3D View of Rooms**: Explore our rooms in detail with realistic 3D views, helping you make informed booking decisions.
 
   
 ## Screenshots
 
-### Home Page
+### Login Page
 ![Login page](images/login.png)
 
-### Booking Page
+### Home page
 ![Index page](images/index.png)
 
 ### Booking Page
