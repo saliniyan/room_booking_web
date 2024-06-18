@@ -215,7 +215,7 @@ def admin_panel():
             ''', (booking_id,))
             db.commit()
             # Notify user via email that booking is accepted
-            send_email('accepted', booking_id, reason)
+            #send_email('accepted', booking_id, reason)
         elif action == 'reject':
             db = get_db()
             cursor = db.cursor()
@@ -224,33 +224,33 @@ def admin_panel():
             ''', (booking_id,))
             db.commit()
             # Notify user via email that booking is rejected
-            send_email('rejected', booking_id, reason)
+            #send_email('rejected', booking_id, reason)
 
         return redirect(url_for('admin_panel'))
 
-def send_email(status, booking_id, reason):
-    msg = EmailMessage()
-    msg['Subject'] = 'Booking Status Notification'
-    msg['From'] = EMAIL_ADDRESS
-    msg['To'] = RECIPIENT_EMAIL
+# def send_email(status, booking_id, reason):
+#     msg = EmailMessage()
+#     msg['Subject'] = 'Booking Status Notification'
+#     msg['From'] = EMAIL_ADDRESS
+#     msg['To'] = RECIPIENT_EMAIL
 
-    if status == 'accepted':
-        msg.set_content(f"""\
-            Booking Accepted!
-            Your booking for the room with ID {booking_id} has been accepted.
+#     if status == 'accepted':
+#         msg.set_content(f"""\
+#             Booking Accepted!
+#             Your booking for the room with ID {booking_id} has been accepted.
 
-        """)
-    elif status == 'rejected':
-        msg.set_content(f"""\
-            Booking Rejected!
-            We regret to inform you that your booking for the room with ID {booking_id} has been rejected.
+#         """)
+#     elif status == 'rejected':
+#         msg.set_content(f"""\
+#             Booking Rejected!
+#             We regret to inform you that your booking for the room with ID {booking_id} has been rejected.
 
-            Reason: {reason}
-        """)
+#             Reason: {reason}
+#         """)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        smtp.send_message(msg)
+#     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+#         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+#         smtp.send_message(msg)
 
 @application.route('/accepted_bookings', methods=['GET'])
 def database_view():
