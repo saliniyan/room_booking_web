@@ -1,31 +1,24 @@
-house_info = {
-    1: {
-        'rooms': 3,
-        'adults': 2,
-        'children': 1,
-        'description': "Guest House 1",
-        'url': "https://saliniyan.github.io/images/room_1.jpg"
-    },
+# House_details.py
+from pymongo import MongoClient
 
-    2: {
-        'rooms': 4,
-        'adults': 3,
-        'children': 2,
-        'description': "Guest House 2",
-        'url': "https://saliniyan.github.io/images/room_2.jpg"
-    },
-    3: {
-        'rooms': 2,
-        'adults': 1,
-        'children': 0,
-        'description': "Guest House 3",
-        'url': "https://saliniyan.github.io/images/room_3.jpg"
-    },
-        4: {
-        'rooms': 2,
-        'adults': 1,
-        'children': 0,
-        'description': "Guest House 4",
-        'url': "https://saliniyan.github.io/images/room_3.jpg"
-    }
-}
+connection_string = "mongodb+srv://saliniyan:saliniyan@cluster0.tp4v7al.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+def get_house_info():
+    client = MongoClient(connection_string)
+    db = client['mydatabase']
+    collection = db['mycollection']
+
+    house_info = {}
+    documents = collection.find()
+
+    for doc in documents:
+        house_info[str(doc['_id'])] = {
+            'rooms': doc.get('rooms'),
+            'adults': doc.get('adults'),
+            'children': doc.get('children'),
+            'description': doc.get('description'),
+            'url': doc.get('url')
+        }
+
+    client.close()
+    return house_info

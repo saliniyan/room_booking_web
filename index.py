@@ -4,15 +4,25 @@ from email.message import EmailMessage
 import smtplib
 import pandas as pd
 from io import BytesIO
-from House_details import house_info
+from House_details import get_house_info
+from pymongo import MongoClient
+from bson.objectid import ObjectId
+
 
 application = Flask(__name__)
 application.config['DATABASE'] = 'site.db'
 application.secret_key = "hello"
 
+connection_string = "mongodb+srv://saliniyan:saliniyan@cluster0.tp4v7al.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(connection_string)
+db = client['mydatabase'] 
+collection = db['mycollection']
+
 EMAIL_ADDRESS = "vishnus.22aim@kongu.edu" 
 EMAIL_PASSWORD = "password"  
 RECIPIENT_EMAIL = "pranavsivakumar328@gmail.com"
+
+house_info = get_house_info() 
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -94,8 +104,13 @@ def submit():
 
     available_houses = []
     for house_id, info in house_info.items():
-        if info['rooms'] >= rooms_needed:
-            available_houses.append(house_id)
+        try:
+            if int(info['rooms']) >= int(rooms_needed):  # Cast both to integers for comparison
+                available_houses.append(house_id)
+        except ValueError:
+            # Handle the case where conversion fails
+            print(f"Invalid data for house {house_id}: rooms={info['rooms']} or rooms_needed={rooms_needed}")
+
 
     available_results = []
     for house_id in available_houses:
@@ -244,6 +259,63 @@ def database_view():
     pending_bookings = df.to_dict(orient='records')
 
     return render_template('accepted_bookings.html', pending_bookings=pending_bookings)
+
+@application.route('/add_rooms', methods=['GET', 'POST'])
+def add_rooms():
+    if request.method == 'POST':
+        # Get data from the form
+        rooms = request.form['rooms']
+        adults = request.form['adults']
+        children = request.form['children']
+        description = request.form['description']
+        url = request.form['url']
+        
+        # Create a document to insert into MongoDB
+        room_data = {
+            'rooms': rooms,
+            'adults': int(adults),
+            'children': int(children),
+            'description': description,
+            'url': url
+        }
+        
+        # Insert the data into the collection
+        collection.insert_one(room_data)
+
+        global house_info
+        house_info = get_house_info()
+
+        # Redirect to a confirmation page or back to the form
+        return redirect(url_for('admin_panel'))
+
+    return render_template('add_rooms.html')
+
+@application.route('/view_rooms')
+def view_rooms():
+    house_info = {}
+    documents = collection.find()
+    
+    for doc in documents:
+        house_info[str(doc['_id'])] = {
+            'rooms': doc.get('rooms'),
+            'adults': doc.get('adults'),
+            'children': doc.get('children'),
+            'description': doc.get('description'),
+            'url': doc.get('url')
+        }
+    
+    return render_template('view_rooms.html', house_info=house_info)
+
+@application.route('/delete_room/<house_id>', methods=['POST'])
+def delete_room(house_id):
+    try:
+        collection.delete_one({'_id': ObjectId(house_id)})  # Using ObjectId
+        global house_info
+        house_info = get_house_info()
+        return redirect('/view_rooms')
+    except Exception as e:
+        print(f"Error deleting room: {e}")
+        return redirect('/view_rooms')
 
 if __name__ == '__main__':
     create_tables()

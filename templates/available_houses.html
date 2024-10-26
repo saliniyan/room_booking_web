@@ -60,7 +60,7 @@
         }
 
         .house-item {
-            width: 300px; /* Adjust width as needed */
+            width: 300px;
             margin-bottom: 20px;
             padding: 20px;
             border-radius: 10px;
@@ -162,7 +162,6 @@
                 <ul class="houses-list">
                     {% for result in available_results %}
                         <li class="house-item">
-                            <h2>House ID: {{ result['house_id'] }}</h2>
                             <p>Number of Rooms: {{ result['rooms'] }}</p>
                             <p class="description">Description: {{ result['description'] }}</p>
                             <button onclick='showVR({{ result["rooms"] }})' style="transition: background-color 0.3s ease;">View VR</button>
