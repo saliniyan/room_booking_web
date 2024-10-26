@@ -7,20 +7,15 @@ from io import BytesIO
 from House_details import get_house_info
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-
+from config import connection_string, EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENT_EMAIL
 
 application = Flask(__name__)
 application.config['DATABASE'] = 'site.db'
 application.secret_key = "hello"
 
-connection_string = "mongodb+srv://saliniyan:saliniyan@cluster0.tp4v7al.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(connection_string)
 db = client['mydatabase'] 
 collection = db['mycollection']
-
-EMAIL_ADDRESS = "vishnus.22aim@kongu.edu" 
-EMAIL_PASSWORD = "password"  
-RECIPIENT_EMAIL = "pranavsivakumar328@gmail.com"
 
 house_info = get_house_info() 
 
