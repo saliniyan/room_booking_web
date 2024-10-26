@@ -5,141 +5,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-        }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f7f7f7;
+        margin: 0;
+        padding: 0;
+    }
 
-        .container {
-            margin-top: 50px;  
-            margin-left: 10px;
-            margin-right: 50px;          
-            padding: 20px;
-            width: max-content;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-}
-        .container_button{
-            margin-left: 10px;
-            margin-right: 50px;          
-            padding: 20px;
-            width: max-content;
-            border-radius: 10px;
-            transition: transform 0.3s ease;
-            
-        }
-        .container_button button:hover {
-                background-color: #2980b9;
-                transform: scale(1.01);
-        }
+    .container {
+        margin-left: 400px;
+        margin-right: 50px;          
+        padding: 20px;
+        width: max-content;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
 
-        .container:hover {
-            transform: scale(1.01);
-        }
+    .container_button {
+        margin-left: 10px;
+        margin-right: 50px;          
+        padding: 20px;
+        width: max-content;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+    }
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
+    .container_button button:hover {
+        background-color: #2980b9;
+        transform: scale(1.01);
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            overflow: hidden;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
+    .container:hover {
+        transform: scale(1.01);
+    }
 
-        th, td {
-            padding: 15px;
-            border: 1px solid #ddd;
-            text-align: left;
-            transition: background-color 0.3s ease;
-        }
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
 
-        th {
-            background-color: #4CAF50;
-            color: #fff;
-            text-transform: uppercase;
-            font-size: 14px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0; /* Remove margin-top to eliminate extra space */
+        overflow: hidden;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-        tbody tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
+    th, td {
+        padding: 15px;
+        border: 1px solid #ddd;
+        text-align: left;
+        transition: background-color 0.3s ease;
+    }
 
-        .action-form {
-            display: flex;
-            align-items: center;
-        }
+    th {
+        background-color: #4CAF50;
+        color: #fff;
+        text-transform: uppercase;
+        font-size: 14px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
 
-        select {
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            margin-right: 10px;
-            background-color: #f7f7f7;
-            color: #333;
-            font-size: 14px;
-        }
+    tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
 
-        button {
-            padding: 12px 25px;
-            background-color: #3498db;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+    .action-form {
+        display: flex;
+        align-items: center;
+    }
 
-        button:hover {
-            background-color: #2980b9;
-        }
+    select {
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        margin-right: 10px;
+        background-color: #f7f7f7;
+        color: #333;
+        font-size: 14px;
+    }
 
-        .status-accept {
-            color: #27ae60;
-        }
+    button {
+        padding: 12px 25px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
 
-        .status-reject {
-            color: #e74c3c;
-        }
+    button:hover {
+        background-color: #2980b9;
+    }
 
-        .status-pending {
-            color: #f39c12;
-        }
+    .status-accept {
+        color: #27ae60;
+    }
 
-        .status-label {
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
+    .status-reject {
+        color: #e74c3c;
+    }
 
-        .status-accept {
-            background-color: #27ae60;
-        }
+    .status-pending {
+        color: #f39c12;
+    }
 
-        .status-reject {
-            background-color: #e74c3c;
-        }
+    .status-label {
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
 
-        .status-pending {
-            background-color: #f39c12;
-        }
-        .dropdown {
+    .status-accept {
+        background-color: #27ae60;
+    }
+
+    .status-reject {
+        background-color: #e74c3c;
+    }
+
+    .status-pending {
+        background-color: #f39c12;
+    }
+
+    .dropdown {
         width: 150px;
         padding: 8px;
         border: 1px solid #ccc;
@@ -147,44 +148,59 @@
         background-color: #f9f9f9;
         font-size: 14px;
         color: #333;
-        }
-        nav {
-        background-color: #4169E1;
-        padding: 1rem;
-        }
+    }
 
-        nav ul {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: space-around;
-        }
+    .sidebar {
+        width: 250px;
+        background-color: #2c3e50;
+        height: 100vh;
+        position: fixed;
+        padding: 20px;
+    }
 
-        nav a {
-            color: #ffffff;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            transition: background-color 0.3s;
-        }
+    .sidebar nav ul {
+        list-style-type: none;
+    }
 
-        nav a:hover {
-            background-color: #003366;;
-            border-radius: 4px;
-        }
+    .sidebar nav ul li {
+        margin: 15px 0;
+    }
+
+    .sidebar nav ul li a {
+        text-decoration: none;
+        color: #ecf0f1;
+        font-weight: bold;
+        padding: 10px;
+        display: block;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .sidebar nav ul li a:hover {
+        background-color: #34495e;
+    }
+
+    .content {
+        margin-left: 270px; /* Align content next to sidebar */
+        padding: 20px;
+        flex: 1;
+    }
 
     </style>
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="/admin">Pending Booking</a></li>
-            <li><a href="/accepted_bookings">Accepted</a></li>
-            <li><a href="#services">Add user</a></li>
-            <li><a href="/add_rooms">Add Rooms</a></li>
-            <li><a href="/view_rooms">View all rooms</a></li>
-        </ul>
-    </nav>
+    <div class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="/admin">Pending Booking</a></li>
+                <li><a href="/accepted_bookings">Accepted</a></li>
+                <li><a href="#services">Add User</a></li>
+                <li><a href="/add_rooms">Add Rooms</a></li>
+                <li><a href="/view_rooms">View All Rooms</a></li>
+            </ul>
+        </nav>
+    </div>
+    <br>
     <div class="container">
         <h1>Pending Bookings</h1>
         <table>

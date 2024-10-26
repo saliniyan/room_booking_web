@@ -7,9 +7,57 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
             background-color: #f8f9fa;
+            margin: 0; /* Ensure no default margin */
+            padding: 0; /* Ensure no default padding */
         }
+
+        .sidebar {
+        width: 250px;
+        background-color: #2c3e50;
+        height: 100vh;
+        position: fixed;
+        padding: 20px;
+        }
+
+        .sidebar nav ul {
+            list-style-type: none;
+        }
+
+        .sidebar nav ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: #ecf0f1;
+            font-weight: bold;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar nav ul li a:hover {
+            background-color: #34495e;
+        }
+
+        .content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .container {
+            margin-left: 400px;
+            margin-right: 50px;          
+            padding: 20px;
+            width: max-content;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
         form {
             background-color: white;
             padding: 20px;
@@ -18,10 +66,12 @@
             max-width: 400px;
             margin: auto;
         }
+
         label {
             margin-bottom: 10px;
             display: block;
         }
+
         input[type="text"],
         input[type="number"] {
             width: 100%;
@@ -30,6 +80,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         input[type="submit"] {
             background-color: #003366;
             color: white;
@@ -39,37 +90,53 @@
             cursor: pointer;
             width: 100%;
         }
+
         input[type="submit"]:hover {
             background-color: #002244;
         }
     </style>
 </head>
 <body>
-    <h2>Add Room</h2>
-    <form action="/add_rooms" method="POST" onsubmit="return confirmSubmission();">
-        <label for="rooms">Rooms:</label>
-        <input type="text" id="rooms" name="rooms" required>
+    <div class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="/admin">Pending Booking</a></li>
+                <li><a href="/accepted_bookings">Accepted</a></li>
+                <li><a href="#services">Add User</a></li>
+                <li><a href="/add_rooms">Add Rooms</a></li>
+                <li><a href="/view_rooms">View All Rooms</a></li>
+            </ul>
+        </nav>
+    </div>
     
-        <label for="adults">Adults:</label>
-        <input type="number" id="adults" name="adults" required>
-    
-        <label for="children">Children:</label>
-        <input type="number" id="children" name="children" required>
-    
-        <label for="description">Description:</label>
-        <input type="text" id="description" name="description" required>
-    
-        <label for="url">Image URL:</label>
-        <input type="text" id="url" name="url" value="https://saliniyan.github.io/images/room_1.jpg" required>
-    
-        <input type="submit" value="Submit">
-    </form>
-    
+    <div class="content">
+        <div class="container">
+            <h2>Add Room</h2>
+            <form action="/add_rooms" method="POST" onsubmit="return confirmSubmission();">
+                <label for="rooms">Rooms:</label>
+                <input type="text" id="rooms" name="rooms" required>
+                
+                <label for="adults">Adults:</label>
+                <input type="number" id="adults" name="adults" required>
+                
+                <label for="children">Children:</label>
+                <input type="number" id="children" name="children" required>
+                
+                <label for="description">Description:</label>
+                <input type="text" id="description" name="description" required>
+                
+                <label for="url">Image URL:</label>
+                <input type="text" id="url" name="url" value="https://saliniyan.github.io/images/room_1.jpg" required>
+                
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+
     <script>
         function confirmSubmission() {
             return confirm("Are you sure you want to submit the form?");
         }
     </script>
-    
 </body>
 </html>
