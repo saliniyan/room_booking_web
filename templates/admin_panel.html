@@ -147,10 +147,43 @@
         background-color: #f9f9f9;
         font-size: 14px;
         color: #333;
-    }
+        }
+        nav {
+        background-color: #4169E1;
+        padding: 1rem;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: background-color 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #003366;;
+            border-radius: 4px;
+        }
+
     </style>
 </head>
 <body>
+    <nav>
+        <ul>
+            <li><a href="/admin">Pending Booking</a></li>
+            <li><a href="/accepted_bookings">Accepted</a></li>
+            <li><a href="#services">Add user</a></li>
+            <li><a href="#contact">Add Rooms</a></li>
+        </ul>
+    </nav>
     <div class="container">
         <h1>Pending Bookings</h1>
         <table>

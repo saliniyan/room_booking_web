@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accepted Bookings</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        overflow: hidden;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+        padding: 15px;
+        border: 1px solid #ddd;
+        text-align: left;
+        transition: background-color 0.3s ease;
+    }
+
+    th {
+        background-color: #4CAF50;
+        color: #fff;
+        text-transform: uppercase;
+        font-size: 14px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .action-form {
+        display: flex;
+        align-items: center;
+    }</style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Accepted Bookings</h1>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Check-in Date</th>
+                    <th>Check-out Date</th>
+                    <th>House ID</th>
+                    <th>Name</th>
+                    <th>Designation</th>
+                    <th>Phone Number</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in pending_bookings %}
+                <tr>
+                    <td>{{ booking['id'] }}</td>
+                    <td>{{ booking['check_in'] }}</td>
+                    <td>{{ booking['check_out'] }}</td>
+                    <td>{{ booking['House_NO'] }}</td>
+                    <td>{{ booking['name'] }}</td>
+                    <td>{{ booking['designation'] }}</td>
+                    <td>{{ booking['phone_no'] }}</td>
+                    <td>
+                        Purpose of Visit: {{ booking['purpose_of_visit'] }}<br>
+                        Originator Name: {{ booking['originator_name'] }}<br>
+                        Department Contact Number: {{ booking['department_contact_no'] }}<br>
+                        No. of Breakfast: {{ booking['no_of_breakfast'] }}<br>
+                        No. of Lunch: {{ booking['no_of_lunch'] }}<br>
+                        No. of Dinner: {{ booking['no_of_dinner'] }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</html>

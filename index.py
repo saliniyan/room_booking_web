@@ -4,13 +4,14 @@ from email.message import EmailMessage
 import smtplib
 import pandas as pd
 from io import BytesIO
+from House_details import house_info
 
 application = Flask(__name__)
 application.config['DATABASE'] = 'site.db'
 application.secret_key = "hello"
 
 EMAIL_ADDRESS = "vishnus.22aim@kongu.edu" 
-EMAIL_PASSWORD = "password"  #neet to give password here 
+EMAIL_PASSWORD = "password"  
 RECIPIENT_EMAIL = "pranavsivakumar328@gmail.com"
 
 def get_db():
@@ -28,31 +29,6 @@ def close_db(e=None):
 @application.teardown_appcontext
 def teardown_db(e=None):
     close_db()
-
-house_info = {
-    1: {
-        'rooms': 3,
-        'adults': 2,
-        'children': 1,
-        'description': "NATURAL VIEW",
-        'url': "https://saliniyan.github.io/images/room_1.jpg"
-    },
-
-    2: {
-        'rooms': 4,
-        'adults': 3,
-        'children': 2,
-        'description': "HOTEL NEAR",
-        'url': "https://saliniyan.github.io/images/room_2.jpg"
-    },
-    3: {
-        'rooms': 2,
-        'adults': 1,
-        'children': 0,
-        'description': "PARKING LOT",
-        'url': "https://saliniyan.github.io/images/room_3.jpg"
-    }
-}
 
 def create_tables():
     with application.app_context():
@@ -256,26 +232,18 @@ def admin_panel():
 def database_view():
     # Connect to the SQLite database
     conn = sqlite3.connect(application.config['DATABASE'])
-
+    
     query = "SELECT * FROM reservations WHERE status = 'accepted';"
-
+    
     # Fetch data into a pandas DataFrame
     df = pd.read_sql_query(query, conn)
-
+    
     conn.close()
 
-    # Convert the DataFrame to an Excel file in memory
-    excel_file = BytesIO()
-    df.to_excel(excel_file, index=False)
-    excel_file.seek(0)
+    # Convert DataFrame to a list of dictionaries
+    pending_bookings = df.to_dict(orient='records')
 
-    # Send the Excel file as a response to the client
-    return send_file(
-        excel_file,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name='accepted_bookings.xlsx'
-    )
+    return render_template('accepted_bookings.html', pending_bookings=pending_bookings)
 
 if __name__ == '__main__':
     create_tables()
