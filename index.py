@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, g, redirect, url_for, session,send_file
+from flask import Flask, render_template, request, g, redirect, url_for, session,send_file, flash
 import sqlite3
 from email.message import EmailMessage
 import smtplib
@@ -7,58 +7,34 @@ from io import BytesIO
 from House_details import get_house_info
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 from config import connection_string, EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENT_EMAIL
 
 application = Flask(__name__)
-application.config['DATABASE'] = 'site.db'
 application.secret_key = "hello"
 
-client = MongoClient(connection_string)
-db = client['mydatabase'] 
-collection = db['mycollection']
 
-house_info = get_house_info() 
+try:
+    client = MongoClient(connection_string)
+    db = client['Room_booking']
+    reservations = db['reservations']
+    collection = db['Rooms']
+    users= db['users']
+except Exception as e:
+    print("Error in connection",e)
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(application.config['DATABASE'])
-        db.row_factory = sqlite3.Row  # Access rows as dictionaries
-    return db
+house_info = get_house_info()
+data_dict = {}
 
-def close_db(e=None):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
+def load_user_data():
+    global data_dict
+    data_dict = {}
+    documents = users.find()
+    for doc in documents:
+        doc['_id'] = str(doc['_id'])
+        data_dict[doc['username']] = doc['password']
 
-@application.teardown_appcontext
-def teardown_db(e=None):
-    close_db()
-
-def create_tables():
-    with application.app_context():
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS reservations (
-                id INTEGER PRIMARY KEY,
-                check_in DATE,
-                check_out DATE,
-                House_NO INTEGER NOT NULL,
-                status varchar(50),
-                name TEXT,
-                designation TEXT,
-                phone_no TEXT,
-                purpose_of_visit TEXT,
-                originator_name TEXT,
-                department_contact_no TEXT,
-                no_of_breakfast INTEGER,
-                no_of_lunch INTEGER,
-                no_of_dinner INTEGER,
-                FOREIGN KEY (House_NO) REFERENCES houses(id)
-            );
-        ''')
-        db.commit()
+load_user_data() #called initailly
 
 @application.route('/')
 def index():
@@ -69,7 +45,7 @@ def authenticate():
     username = request.form['username']
     password = request.form['password']
 
-    if username == 's.ac.in' and password == '123':
+    if username in data_dict and data_dict[username] == password:
         session['username'] = username
         return redirect(url_for('index1'))  # Redirect to index1 route
     elif username == 'b' and password == '456':
@@ -80,7 +56,7 @@ def authenticate():
 
 @application.route('/index1')
 def index1():
-    if 'username' in session and session['username'] == 's.ac.in':
+    if 'username' in session and session['username'] in data_dict:
         return render_template('index1.html')
     else:
         return redirect(url_for('index'))
@@ -93,29 +69,25 @@ def submit():
 
     if not check_in or not check_out or rooms_needed <= 0:
         return "Invalid input. Please fill in all fields correctly."
-
-    db = get_db()
-    cursor = db.cursor()
-
+    
     available_houses = []
     for house_id, info in house_info.items():
         try:
-            if int(info['rooms']) >= int(rooms_needed):  # Cast both to integers for comparison
+            if int(info['rooms']) >= int(rooms_needed):
                 available_houses.append(house_id)
         except ValueError:
-            # Handle the case where conversion fails
             print(f"Invalid data for house {house_id}: rooms={info['rooms']} or rooms_needed={rooms_needed}")
-
 
     available_results = []
     for house_id in available_houses:
-        cursor.execute('''
-            SELECT COUNT(*) FROM reservations
-            WHERE House_NO = ? AND
-            (check_in BETWEEN ? AND ? OR check_out BETWEEN ? AND ?) AND
-            status != 'rejected';  -- Exclude bookings with status 'rejected'
-        ''', (house_id, check_in, check_out, check_in, check_out))
-        booking_count = cursor.fetchone()[0]
+        booking_count = reservations.count_documents({
+            "House_NO": house_id,
+            "$or": [
+                {"check_in": {"$gte": check_in, "$lte": check_out}},
+                {"check_out": {"$gte": check_in, "$lte": check_out}}
+            ],
+            "status": {"$ne": "rejected"}
+        })
         if booking_count == 0:
             house_description = house_info[house_id]['description']
             house_url = house_info[house_id]['url']
@@ -125,7 +97,6 @@ def submit():
                 'description': house_description,
                 'url': house_url
             })
-
 
     if available_results:
         return render_template('available_houses.html', available_results=available_results)
@@ -146,73 +117,63 @@ def book():
 
 @application.route('/submit_form', methods=['POST'])
 def submit_form():
-    # Extract guest details from the form
-    name = request.form['name']
-    designation = request.form['designation']
-    phone_no = request.form['phone_no']
-    purpose_of_visit = request.form['purpose_of_visit']
-    originator_name = request.form['originator_name']
-    department_contact_no = request.form['department_contact_no']
-    no_of_breakfast = request.form['no_of_breakfast']
-    no_of_lunch = request.form['no_of_lunch']
-    no_of_dinner = request.form['no_of_dinner']
-    house_id = request.form['house_id']
-    check_in = request.form['check_in']
-    check_out = request.form['check_out']
+    form_data = {
+        "name": request.form['name'],
+        "designation": request.form['designation'],
+        "phone_no": request.form['phone_no'],
+        "purpose_of_visit": request.form['purpose_of_visit'],
+        "originator_name": request.form['originator_name'],
+        "department_contact_no": request.form['department_contact_no'],
+        "no_of_breakfast": request.form['no_of_breakfast'],
+        "no_of_lunch": request.form['no_of_lunch'],
+        "no_of_dinner": request.form['no_of_dinner'],
+        "House_NO": request.form['house_id'],
+        "check_in": request.form['check_in'],
+        "check_out": request.form['check_out'],
+        "status": "pending"
+    }
 
-    # Insert both guest details and house booking details into the database
-    db = get_db()
-    cursor = db.cursor()
-    status = "pending"
-
-    cursor.execute('''
-        INSERT INTO reservations (check_in, check_out, House_NO, status,  name, designation, phone_no, purpose_of_visit, originator_name, department_contact_no, no_of_breakfast, no_of_lunch, no_of_dinner)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ''', (check_in, check_out, house_id, status, name, designation, phone_no, purpose_of_visit, originator_name, department_contact_no, no_of_breakfast, no_of_lunch, no_of_dinner))
-
-    db.commit()
+    reservations.insert_one(form_data)
     success_message = "Your request is successfully sent to admin"
     return render_template('success.html', success_message=success_message)
 
 @application.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
     if 'username' not in session or session['username'] != 'b':
-        return redirect(url_for('index')) 
+        return redirect(url_for('index'))
 
     if request.method == 'GET':
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            SELECT * FROM reservations WHERE status = 'pending';
-        ''')
-        pending_bookings = cursor.fetchall()
-        
+        pending_bookings = list(reservations.find({"status": "pending"}))
         return render_template('admin_panel.html', pending_bookings=pending_bookings)
-    elif request.method == 'POST':
-        booking_id = request.form['booking_id']
-        action = request.form['action']
-        reason = request.form['reason']
 
-        if action == 'accept':
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute('''
-                UPDATE reservations SET status = 'accepted' WHERE id = ?;
-            ''', (booking_id,))
-            db.commit()
+    elif request.method == 'POST':
+        # Get form data
+        action = request.form.get('action')  # Action can be 'accept' or 'reject'
+        reason = request.form.get('reason', '')  # Reason for rejection (if any)
+        house_no = request.form.get('House_NO')  # The House_NO from the form
+
+        # Determine the status based on the action
+        status = 'accepted' if action == 'accept' else 'rejected'
+
+        # Update the reservation for the specific house_no
+        result = reservations.update_one(
+            {"House_NO": house_no, "status": "pending"},  # Match by House_NO and status
+            {"$set": {"status": status, "reason": reason}}  # Update only the matched booking
+        )
+
+        # Check if the update was successful
+        if result.matched_count == 0:
+            flash("No pending booking found with the provided house ID.")
+        else:
+            flash("Booking status updated successfully.")
+
+        return redirect(url_for('admin_panel'))
+
             # Notify user via email that booking is accepted
             #send_email('accepted', booking_id, reason)
-        elif action == 'reject':
-            db = get_db()
-            cursor = db.cursor()
-            cursor.execute('''
-                UPDATE reservations SET status = 'rejected' WHERE id = ?;
-            ''', (booking_id,))
-            db.commit()
             # Notify user via email that booking is rejected
             #send_email('rejected', booking_id, reason)
 
-        return redirect(url_for('admin_panel'))
 
 # def send_email(status, booking_id, reason):
 #     msg = EmailMessage()
@@ -240,20 +201,10 @@ def admin_panel():
 
 @application.route('/accepted_bookings', methods=['GET'])
 def database_view():
-    # Connect to the SQLite database
-    conn = sqlite3.connect(application.config['DATABASE'])
-    
-    query = "SELECT * FROM reservations WHERE status = 'accepted';"
-    
-    # Fetch data into a pandas DataFrame
-    df = pd.read_sql_query(query, conn)
-    
-    conn.close()
-
-    # Convert DataFrame to a list of dictionaries
-    pending_bookings = df.to_dict(orient='records')
-
-    return render_template('accepted_bookings.html', pending_bookings=pending_bookings)
+    accepted_bookings = db.reservations.find({'status': 'accepted'})
+    accepted_bookings_list = list(accepted_bookings)
+    df = pd.DataFrame(accepted_bookings_list)
+    return render_template('accepted_bookings.html', bookings=df.to_dict(orient='records'))
 
 @application.route('/add_rooms', methods=['GET', 'POST'])
 def add_rooms():
@@ -301,17 +252,50 @@ def view_rooms():
     
     return render_template('view_rooms.html', house_info=house_info)
 
+
 @application.route('/delete_room/<house_id>', methods=['POST'])
 def delete_room(house_id):
+    if not house_id or len(house_id) != 24:
+        print("Invalid house_id provided.")
+        return redirect('/view_rooms')
+    
     try:
         collection.delete_one({'_id': ObjectId(house_id)})  # Using ObjectId
         global house_info
         house_info = get_house_info()
         return redirect('/view_rooms')
+    except InvalidId:
+        print("Invalid ObjectId format.")
+        return redirect('/view_rooms')
     except Exception as e:
         print(f"Error deleting room: {e}")
         return redirect('/view_rooms')
 
+@application.route('/add_user', methods=['GET'])
+def add_user():
+    return render_template('add_user.html')
+
+@application.route('/add_user', methods=['POST'])
+def register():
+    username = request.form['username']
+    email = request.form['email']
+    password = request.form['password']
+
+    # Check if the username or email already exists
+    existing_user = users.find_one({'$or': [{'username': username}, {'email': email}]})
+    if existing_user:
+        flash('Username or email already exists. Please choose a different one.', 'danger')
+        return redirect(url_for('add_user'))
+    new_user = {
+        'username': username,
+        'email': email,
+        'password': password
+    }
+
+    users.insert_one(new_user)
+    flash('User registered successfully!', 'success')
+    
+    return redirect(url_for('add_user'))
+
 if __name__ == '__main__':
-    create_tables()
     application.run(debug=True)

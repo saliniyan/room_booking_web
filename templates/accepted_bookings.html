@@ -100,7 +100,7 @@
             <ul>
                 <li><a href="/admin">Pending Booking</a></li>
                 <li><a href="/accepted_bookings">Accepted</a></li>
-                <li><a href="#services">Add User</a></li>
+                <li><a href="/add_user">Add User</a></li>
                 <li><a href="/add_rooms">Add Rooms</a></li>
                 <li><a href="/view_rooms">View All Rooms</a></li>
             </ul>
@@ -123,7 +123,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for booking in pending_bookings %}
+                {% for booking in bookings %}
                 <tr>
                     <td>{{ booking['id'] }}</td>
                     <td>{{ booking['check_in'] }}</td>
