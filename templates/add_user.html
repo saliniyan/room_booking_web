@@ -8,59 +8,92 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #f8f9fa;
+            margin: 0; /* Ensure no default margin */
+            padding: 0; /* Ensure no default padding */
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
             height: 100vh;
-        }
-        .container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
             padding: 20px;
-            width: 300px;
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
+
+        .sidebar nav ul {
+            list-style-type: none;
         }
-        label {
-            margin-bottom: 5px;
-            display: block;
+
+        .sidebar nav ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: #ecf0f1;
             font-weight: bold;
+            padding: 10px;
+            display: block;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
+
+        .sidebar nav ul li a:hover {
+            background-color: #34495e;
+        }
+
+        .content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .container {
+            margin: 0 auto;
+            padding: 20px;
+            width: max-content;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: auto;
+        }
+
+        label {
+            margin-bottom: 10px;
+            display: block;
+        }
+
         input[type="text"],
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="number"] {
             width: 100%;
             padding: 10px;
-            margin: 5px 0 15px;
-            border: 1px solid #ddd;
+            margin: 5px 0 20px 0;
+            border: 1px solid #ccc;
             border-radius: 4px;
-            transition: border-color 0.3s;
         }
-        input[type="text"]:focus,
-        input[type="email"]:focus,
-        input[type="password"]:focus {
-            border-color: #007BFF;
-            outline: none;
-        }
+
         input[type="submit"] {
-            background-color: #007BFF;
+            background-color: #003366;
             color: white;
-            border: none;
             padding: 10px;
+            border: none;
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
-            transition: background-color 0.3s;
         }
+
         input[type="submit"]:hover {
-            background-color: #0056b3;
+            background-color: #002244;
         }
         .flash-message {
             color: green; /* Change color based on your preference */
@@ -75,11 +108,24 @@
         .flash-message.error {
             color: red; /* Change color for error messages */
         }
+        
     </style>
 </head>
 <body>
+    <div class="sidebar">
+        <nav>
+            <ul>
+                <li><a href="/admin">Pending Booking</a></li>
+                <li><a href="/accepted_bookings">Accepted</a></li>
+                <li><a href="/add_user">Add User</a></li>
+                <li><a href="/add_rooms">Add Rooms</a></li>
+                <li><a href="/view_rooms">View All Rooms</a></li>
+            </ul>
+        </nav>
+    </div>
+    
     <div class="container">
-        <h1>User Registration</h1>
+        <h1>Add User Registration</h1>
 
         <form action="/add_user" method="POST">
             <label for="username">Username:</label>
