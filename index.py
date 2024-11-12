@@ -1,14 +1,10 @@
-from flask import Flask, render_template, request, g, redirect, url_for, session,send_file, flash
-import sqlite3
-from email.message import EmailMessage
-import smtplib
+from flask import Flask, render_template, request, g, redirect, url_for, session, flash
 import pandas as pd
-from io import BytesIO
 from House_details import get_house_info
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
-from config import connection_string, EMAIL_ADDRESS, EMAIL_PASSWORD, RECIPIENT_EMAIL
+from config import connection_string
 
 application = Flask(__name__)
 application.secret_key = "hello"
@@ -169,36 +165,7 @@ def admin_panel():
 
         return redirect(url_for('admin_panel'))
 
-            # Notify user via email that booking is accepted
-            #send_email('accepted', booking_id, reason)
-            # Notify user via email that booking is rejected
-            #send_email('rejected', booking_id, reason)
-
-
-# def send_email(status, booking_id, reason):
-#     msg = EmailMessage()
-#     msg['Subject'] = 'Booking Status Notification'
-#     msg['From'] = EMAIL_ADDRESS
-#     msg['To'] = RECIPIENT_EMAIL
-
-#     if status == 'accepted':
-#         msg.set_content(f"""\
-#             Booking Accepted!
-#             Your booking for the room with ID {booking_id} has been accepted.
-
-#         """)
-#     elif status == 'rejected':
-#         msg.set_content(f"""\
-#             Booking Rejected!
-#             We regret to inform you that your booking for the room with ID {booking_id} has been rejected.
-
-#             Reason: {reason}
-#         """)
-
-#     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-#         smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-#         smtp.send_message(msg)
-
+            
 @application.route('/accepted_bookings', methods=['GET'])
 def database_view():
     accepted_bookings = db.reservations.find({'status': 'accepted'})
