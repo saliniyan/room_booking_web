@@ -25,17 +25,17 @@ This project is a web-based room booking system built using Python, HTML, and CS
 ![Add user](images/add_user.png)
 
 ### User page After log in using name and password
-![Index page](images/search.png.png)
+![Index page](images/search.png)
 
 ### Booking Page
-![House page](images/available_house.png)
+![House page](images/available.png)
 
 
 ### Form Page
-![Form page](images/guest_details_form.png)
+![Form page](images/fill_details.png.png)
 
 ### Admin Panel
-![Admin Panel](images/admin_panel.png)
+![Admin Panel](images/accept_request.png)
 
 ### View Accepted Bookings
 ![Accepted Booking](images/view_request.png)
