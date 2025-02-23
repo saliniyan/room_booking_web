@@ -32,7 +32,7 @@ This project is a web-based room booking system built using Python, HTML, and CS
 
 
 ### Form Page
-![Form page](images/fill_details.png.png)
+![Form page](images/fill_details.png)
 
 ### Admin Panel
 ![Admin Panel](images/accept_request.png)
