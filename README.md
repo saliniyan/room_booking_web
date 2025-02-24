@@ -1,13 +1,12 @@
 # Room Booking System
-
-This project is a web-based room booking system built using Python, HTML, and CSS. The system allows users to book rooms for various purposes through a user-friendly interface. It also includes an admin panel for managing room bookings.
+This project is a web-based room booking system built using Python, HTML, CSS, and Flask. The system allows users to book rooms for various purposes through a user-friendly interface. It also includes an admin panel for managing users and room bookings.
 
 ## Features
 
-- **User Authentication**: Secure login and registration for users.
+- **Admin Panel**: Admins can manage user accounts, rooms, and bookings.
 - **Room Availability Check**: Users can check the availability of rooms before booking.
-- **Admin Panel**: Admins can view, add, and delete room bookings.
-- `3D View of Rooms: Explore our rooms in detail with realistic 3D views, helping you make informed booking decisions.`
+- `3D View of Rooms: Explore our rooms in detail with 3D views, helping you make informed booking decisions.`
+- **Database Integration**: Uses MongoDB for storing user, room, and booking information.
 
   
 ## Screenshots
@@ -34,7 +33,7 @@ This project is a web-based room booking system built using Python, HTML, and CS
 ### Form Page
 ![Form page](images/fill_details.png)
 
-### Admin Panel
+### Back to Admin Panel using Admin User and password
 ![Admin Panel](images/accept_request.png)
 
 ### View Accepted Bookings
@@ -45,7 +44,7 @@ This project is a web-based room booking system built using Python, HTML, and CS
 You can access the hosted application at [Room Booking System](https://saliniyan.pythonanywhere.com/).
 
 - **Regular User**: 
-  - Create from Admin Page(for instance user :a Password:a)
+  - Create from Admin Page(for instance user :a, Password:a)
 - **Admin User**:
   - Username: `b`
   - Password: `456`
@@ -54,9 +53,9 @@ You can access the hosted application at [Room Booking System](https://saliniyan
 
 ### Prerequisites
 
-- Python 3.1
+- Python 3.10
 - Flask
-- SQLite
+- MongoDB
 
 
 ## Usage
