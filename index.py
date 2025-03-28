@@ -77,13 +77,14 @@ def submit():
     available_results = []
     for house_id in available_houses:
         booking_count = reservations.count_documents({
-            "House_NO": house_id,
-            "$or": [
-                {"check_in": {"$gte": check_in, "$lte": check_out}},
-                {"check_out": {"$gte": check_in, "$lte": check_out}}
-            ],
-            "status": {"$ne": "rejected"}
+        "House_NO": house_id,
+        "$and": [
+            {"check_in": {"$lte": check_out}},  # Existing booking starts before requested checkout
+            {"check_out": {"$gte": check_in}}   # Existing booking ends after requested check-in
+        ],
+        "status": {"$ne": "rejected"}
         })
+
         if booking_count == 0:
             house_description = house_info[house_id]['description']
             house_url = house_info[house_id]['url']
