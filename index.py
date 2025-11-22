@@ -1,269 +1,270 @@
-from flask import Flask, render_template, request, g, redirect, url_for, session, flash
-import pandas as pd
-from House_details import get_house_info
+from flask import Flask, render_template, request, g, redirect, url_for, flash, make_response, session
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from bson.errors import InvalidId
-from config import connection_string
+from config import connection_string, JWT_SECRET
+import bcrypt
+import jwt
+from functools import wraps
+from datetime import datetime, timedelta
+import pandas as pd
+from House_details import get_house_info
 
 application = Flask(__name__)
 application.secret_key = "hello"
 
+JWT_ALGORITHM = "HS256"
+JWT_EXP_SECONDS = 3600
 
-try:
-    client = MongoClient(connection_string)
-    db = client['Room_booking']
-    reservations = db['reservations']
-    collection = db['Rooms']
-    users= db['users']
-except Exception as e:
-    print("Error in connection",e)
+#  MongoDB
+client = MongoClient(connection_string)
+db = client['Room_booking']
+reservations = db['reservations']
+collection = db['Rooms']
+users = db['users']
 
+# Load houses
 house_info = get_house_info()
-data_dict = {}
 
-def load_user_data():
-    global data_dict
-    data_dict = {}
-    documents = users.find()
-    for doc in documents:
-        doc['_id'] = str(doc['_id'])
-        data_dict[doc['username']] = doc['password']
 
-load_user_data() #called initailly
+# JWT Helpers 
+def create_token(user):
+    payload = {
+        "user_id": str(user["_id"]),
+        "username": user["username"],
+        "role": user["role"],
+        "exp": datetime.utcnow() + timedelta(seconds=JWT_EXP_SECONDS)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+
+def token_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        token = request.cookies.get("access_token")
+        if not token:
+            return redirect(url_for("index"))
+
+        try:
+            g.user = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        except:
+            return redirect(url_for("index"))
+
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# Admin (NO JWT)
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("is_admin"):
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return wrapper
+
+
+#  ROUTES
 @application.route('/')
 def index():
     return render_template('login.html')
 
-@application.route('/authenticate', methods=['POST'])
-def authenticate():
+
+#  Add User (Admin only)
+@application.route('/add_user', methods=['GET', 'POST'])
+@admin_required
+def add_user():
+    if request.method == 'GET':
+        return render_template('add_user.html')
+
     username = request.form['username']
+    email = request.form['email']
     password = request.form['password']
 
-    if username in data_dict and data_dict[username] == password:
-        session['username'] = username
-        return redirect(url_for('index1'))  # Redirect to index1 route
-    elif username == 'b' and password == '456':
-        session['username'] = username
-        return redirect(url_for('admin_panel'))  # Redirect to admin_panel route
-    else:
-        return "Invalid credentials"
+    if users.find_one({"username": username}):
+        flash("Username already exists", "danger")
+        return redirect(url_for("add_user"))
 
-@application.route('/index1')
-def index1():
-    if 'username' in session and session['username'] in data_dict:
-        return render_template('index1.html')
-    else:
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+    users.insert_one({
+        "username": username,
+        "email": email,
+        "password": hashed,
+        "role": "user"
+    })
+
+    flash("User created successfully!", "success")
+    return redirect(url_for("admin_panel"))
+
+
+#  Login 
+@application.route('/authenticate', methods=['POST'])
+def authenticate():
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '')
+
+    if not username or not password:
+        flash("Enter username & password", "danger")
         return redirect(url_for('index'))
 
+    # Admin login (NO JWT)
+    if username == "b" and password == "123":
+        session["is_admin"] = True
+        resp = make_response(redirect(url_for('admin_panel')))
+        resp.delete_cookie("access_token")
+        return resp
+
+    # Normal user
+    user = users.find_one({"username": username})
+    if not user:
+        flash("Invalid username or password", "danger")
+        return redirect(url_for("index"))
+
+    if not bcrypt.checkpw(password.encode(), user["password"].encode()):
+        flash("Invalid username or password", "danger")
+        return redirect(url_for("index"))
+
+    token = create_token(user)
+    resp = make_response(redirect(url_for('index1')))
+
+    resp.set_cookie(
+        "access_token",
+        token,
+        httponly=True,
+        samesite="Lax"   # Works on localhost
+    )
+
+    return resp
+
+
+#  Logout 
+@application.route('/logout')
+def logout():
+    session.clear()
+    resp = make_response(redirect(url_for("index")))
+    resp.delete_cookie("access_token")
+    return resp
+
+
+#  User Dashboard 
+@application.route('/index1')
+@token_required
+def index1():
+    return render_template('index1.html')
+
+
+#  Submit Search 
 @application.route('/submit', methods=['POST'])
+@token_required
 def submit():
     check_in = request.form['check_in']
     check_out = request.form['check_out']
     rooms_needed = int(request.form['rooms'])
 
-    if not check_in or not check_out or rooms_needed <= 0:
-        return "Invalid input. Please fill in all fields correctly."
-    
-    available_houses = []
-    for house_id, info in house_info.items():
-        try:
-            if int(info['rooms']) >= int(rooms_needed):
-                available_houses.append(house_id)
-        except ValueError:
-            print(f"Invalid data for house {house_id}: rooms={info['rooms']} or rooms_needed={rooms_needed}")
-
-    available_results = []
-    for house_id in available_houses:
-        booking_count = reservations.count_documents({
-        "House_NO": house_id,
-        "$and": [
-            {"check_in": {"$lte": check_out}},  # Existing booking starts before requested checkout
-            {"check_out": {"$gte": check_in}}   # Existing booking ends after requested check-in
-        ],
-        "status": {"$ne": "rejected"}
-        })
-
-        if booking_count == 0:
-            house_description = house_info[house_id]['description']
-            house_url = house_info[house_id]['url']
-            available_results.append({
-                'house_id': house_id,
-                'rooms': house_info[house_id]['rooms'],
-                'description': house_description,
-                'url': house_url
+    available = []
+    for hid, info in house_info.items():
+        if int(info['rooms']) >= rooms_needed:
+            count = reservations.count_documents({
+                "House_NO": hid,
+                "$and": [
+                    {"check_in": {"$lte": check_out}},
+                    {"check_out": {"$gte": check_in}}
+                ],
+                "status": {"$ne": "rejected"}
             })
+            if count == 0:
+                available.append({
+                    "house_id": hid,
+                    "rooms": info['rooms'],
+                    "description": info['description'],
+                    "url": info['url']
+                })
 
-    if available_results:
-        return render_template('available_houses.html', available_results=available_results)
-    else:
-        return "Sorry, no houses are available for your requested dates or rooms."
+    return render_template("available_houses.html", available_results=available)
 
+
+#  Book 
 @application.route('/book', methods=['POST'])
+@token_required
 def book():
-    house_id = request.form['house_id']
-    check_in = request.form['check_in']
-    check_out = request.form['check_out']
+    return render_template(
+        "guest_details_form.html",
+        house_id=request.form['house_id'],
+        check_in=request.form['check_in'],
+        check_out=request.form['check_out']
+    )
 
-    if not house_id or not check_in or not check_out:
-        return "Invalid input. Please fill in all fields correctly."
 
-    # Render the guest details form, passing house booking details as parameters
-    return render_template('guest_details_form.html', house_id=house_id, check_in=check_in, check_out=check_out)
-
+#  Submit Form 
 @application.route('/submit_form', methods=['POST'])
+@token_required
 def submit_form():
-    form_data = {
-        "name": request.form['name'],
-        "designation": request.form['designation'],
-        "phone_no": request.form['phone_no'],
-        "purpose_of_visit": request.form['purpose_of_visit'],
-        "originator_name": request.form['originator_name'],
-        "department_contact_no": request.form['department_contact_no'],
-        "no_of_breakfast": request.form['no_of_breakfast'],
-        "no_of_lunch": request.form['no_of_lunch'],
-        "no_of_dinner": request.form['no_of_dinner'],
-        "House_NO": request.form['house_id'],
-        "check_in": request.form['check_in'],
-        "check_out": request.form['check_out'],
-        "status": "pending"
-    }
+    form_data = dict(request.form)
+    form_data["status"] = "pending"
+    form_data["requested_by"] = g.user["username"]
 
     reservations.insert_one(form_data)
-    success_message = "Your request is successfully sent to admin"
-    return render_template('success.html', success_message=success_message)
+    return render_template("success.html", success_message="Request submitted!")
 
+
+#  Admin Panel 
 @application.route('/admin', methods=['GET', 'POST'])
+@admin_required
 def admin_panel():
-    if 'username' not in session or session['username'] != 'b':
-        return redirect(url_for('index'))
-
     if request.method == 'GET':
-        pending_bookings = list(reservations.find({"status": "pending"}))
-        return render_template('admin_panel.html', pending_bookings=pending_bookings)
+        pending = list(reservations.find({"status": "pending"}))
+        return render_template("admin_panel.html", pending_bookings=pending)
 
-    elif request.method == 'POST':
-        # Get form data
-        action = request.form.get('action')  # Action can be 'accept' or 'reject'
-        reason = request.form.get('reason', '')  # Reason for rejection (if any)
-        house_no = request.form.get('House_NO')  # The House_NO from the form
+    action = request.form['action']
+    house_no = request.form['House_NO']
+    reason = request.form.get('reason', '')
 
-        # Determine the status based on the action
-        status = 'accepted' if action == 'accept' else 'rejected'
+    status = "accepted" if action == "accept" else "rejected"
+    reservations.update_one(
+        {"House_NO": house_no, "status": "pending"},
+        {"$set": {"status": status, "reason": reason}}
+    )
+    return redirect(url_for("admin_panel"))
 
-        # Update the reservation for the specific house_no
-        result = reservations.update_one(
-            {"House_NO": house_no, "status": "pending"},  # Match by House_NO and status
-            {"$set": {"status": status, "reason": reason}}  # Update only the matched booking
-        )
 
-        # Check if the update was successful
-        if result.matched_count == 0:
-            flash("No pending booking found with the provided house ID.")
-        else:
-            flash("Booking status updated successfully.")
+#  Accepted Bookings 
+@application.route('/accepted_bookings')
+@admin_required
+def accepted_bookings():
+    data = list(reservations.find({"status": "accepted"}))
+    df = pd.DataFrame(data)
+    return render_template("accepted_bookings.html", bookings=df.to_dict(orient="records"))
 
-        return redirect(url_for('admin_panel'))
 
-            
-@application.route('/accepted_bookings', methods=['GET'])
-def database_view():
-    accepted_bookings = db.reservations.find({'status': 'accepted'})
-    accepted_bookings_list = list(accepted_bookings)
-    df = pd.DataFrame(accepted_bookings_list)
-    return render_template('accepted_bookings.html', bookings=df.to_dict(orient='records'))
-
+#  Add Rooms 
 @application.route('/add_rooms', methods=['GET', 'POST'])
+@admin_required
 def add_rooms():
     if request.method == 'POST':
-        # Get data from the form
-        rooms = request.form['rooms']
-        adults = request.form['adults']
-        children = request.form['children']
-        description = request.form['description']
-        url = request.form['url']
-        
-        # Create a document to insert into MongoDB
-        room_data = {
-            'rooms': rooms,
-            'adults': int(adults),
-            'children': int(children),
-            'description': description,
-            'url': url
-        }
-        
-        # Insert the data into the collection
-        collection.insert_one(room_data)
+        collection.insert_one(dict(request.form))
+        return redirect(url_for("admin_panel"))
+    return render_template("add_rooms.html")
 
-        global house_info
-        house_info = get_house_info()
 
-        # Redirect to a confirmation page or back to the form
-        return redirect(url_for('admin_panel'))
-
-    return render_template('add_rooms.html')
-
+#  View Rooms 
 @application.route('/view_rooms')
+@admin_required
 def view_rooms():
-    house_info = {}
-    documents = collection.find()
-    
-    for doc in documents:
-        house_info[str(doc['_id'])] = {
-            'rooms': doc.get('rooms'),
-            'adults': doc.get('adults'),
-            'children': doc.get('children'),
-            'description': doc.get('description'),
-            'url': doc.get('url')
-        }
-    
-    return render_template('view_rooms.html', house_info=house_info)
+    rooms = {str(doc["_id"]): doc for doc in collection.find()}
+    return render_template("view_rooms.html", house_info=rooms)
 
 
-@application.route('/delete_room/<house_id>', methods=['POST'])
-def delete_room(house_id):
-    if not house_id or len(house_id) != 24:
-        print("Invalid house_id provided.")
-        return redirect('/view_rooms')
-    
+#  Delete Room 
+@application.route('/delete_room/<id>', methods=['POST'])
+@admin_required
+def delete_room(id):
     try:
-        collection.delete_one({'_id': ObjectId(house_id)})  # Using ObjectId
-        global house_info
-        house_info = get_house_info()
-        return redirect('/view_rooms')
-    except InvalidId:
-        print("Invalid ObjectId format.")
-        return redirect('/view_rooms')
-    except Exception as e:
-        print(f"Error deleting room: {e}")
-        return redirect('/view_rooms')
+        collection.delete_one({"_id": ObjectId(id)})
+    except:
+        pass
+    return redirect(url_for("view_rooms"))
 
-@application.route('/add_user', methods=['GET'])
-def add_user():
-    return render_template('add_user.html')
 
-@application.route('/add_user', methods=['POST'])
-def register():
-    username = request.form['username']
-    email = request.form['email']
-    password = request.form['password']
-
-    # Check if the username or email already exists
-    existing_user = users.find_one({'$or': [{'username': username}, {'email': email}]})
-    if existing_user:
-        flash('Username or email already exists. Please choose a different one.', 'danger')
-        return redirect(url_for('add_user'))
-    new_user = {
-        'username': username,
-        'email': email,
-        'password': password
-    }
-
-    users.insert_one(new_user)
-    flash('User registered successfully!', 'success')
-    
-    return redirect(url_for('add_user'))
-
+#  Run 
 if __name__ == '__main__':
     application.run(debug=True)
